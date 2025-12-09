@@ -1,12 +1,12 @@
 import os
+import time
 import requests
+from typing import Dict, List, Tuple, Optional
 
 from .parser_service import normalize_movie
 from utils.error_handler import safe_raise
 from dotenv import load_dotenv
 
-
-# Load environment variables from .env (backend/.env)
 load_dotenv()
 
 BASE = "https://api.themoviedb.org/3"
@@ -19,13 +19,64 @@ if not TMDB_API_KEY:
         "Add TMDB_API_KEY=<your_v3_api_key> in backend/.env"
     )
 
+# -------------------------------
+# Simple in-memory caches
+# -------------------------------
+
+# Cache for search results: query -> (expires_at, [movies])
+_SEARCH_TTL_SECONDS = 60  # 1 minute cache for search results
+_search_cache: Dict[str, Tuple[float, List[dict]]] = {}
+
+# Cache for movie details: movie_id -> (expires_at, details)
+_DETAILS_TTL_SECONDS = 300  # 5 minutes cache for details
+_details_cache: Dict[int, Tuple[float, dict]] = {}
+
+
+def _get_from_search_cache(query_key: str) -> Optional[List[dict]]:
+    entry = _search_cache.get(query_key)
+    if not entry:
+        return None
+    expires_at, data = entry
+    if time.time() > expires_at:
+        # expired, drop it
+        _search_cache.pop(query_key, None)
+        return None
+    return data
+
+
+def _set_search_cache(query_key: str, data: List[dict]):
+    _search_cache[query_key] = (time.time() + _SEARCH_TTL_SECONDS, data)
+
+
+def _get_from_details_cache(movie_id: int) -> Optional[dict]:
+    entry = _details_cache.get(movie_id)
+    if not entry:
+        return None
+    expires_at, data = entry
+    if time.time() > expires_at:
+        _details_cache.pop(movie_id, None)
+        return None
+    return data
+
+
+def _set_details_cache(movie_id: int, data: dict):
+    _details_cache[movie_id] = (time.time() + _DETAILS_TTL_SECONDS, data)
+
 
 def search_tmdb(params: dict):
     """
     Basic TMDB search by title/keywords using v3 API key.
+    Adds a small in-memory cache to avoid hammering TMDB for identical queries.
     """
-    query = params["query"]
+    raw_query = params["query"]
+    query = raw_query.strip().lower()
 
+    # 1) Try cache first
+    cached = _get_from_search_cache(query)
+    if cached is not None:
+        return cached
+
+    # 2) Call TMDB if not cached
     try:
         r = requests.get(
             f"{BASE}/search/movie",
@@ -49,10 +100,21 @@ def search_tmdb(params: dict):
         safe_raise(502, f"TMDB returned {r.status_code}: {r.text}")
 
     data = r.json()
-    return [normalize_movie(m) for m in data.get("results", [])]
+    results = [normalize_movie(m) for m in data.get("results", [])]
+
+    # 3) Store in cache
+    _set_search_cache(query, results)
+
+    return results
 
 
 def get_movie_details(movie_id: int):
+    # 1) Try cache first
+    cached = _get_from_details_cache(movie_id)
+    if cached is not None:
+        return cached
+
+    # 2) Fetch from TMDB
     try:
         r = requests.get(
             f"{BASE}/movie/{movie_id}",
@@ -81,7 +143,7 @@ def get_movie_details(movie_id: int):
             trailer_key = v["key"]
             break
 
-    return {
+    details = {
         "id": data["id"],
         "title": data.get("title") or data.get("name", ""),
         "overview": data.get("overview", ""),
@@ -98,3 +160,8 @@ def get_movie_details(movie_id: int):
             None,
         ),
     }
+
+    # 3) Cache details
+    _set_details_cache(movie_id, details)
+
+    return details

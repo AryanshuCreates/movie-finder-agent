@@ -2,13 +2,11 @@ import os
 from dotenv import load_dotenv
 from groq import Groq
 
-# Load environment variables from .env (backend/.env)
 load_dotenv()
 
 api_key = os.getenv("GROQ_API_KEY")
 
 if not api_key:
-    # Fail fast with a very clear error instead of a cryptic GroqError
     raise RuntimeError(
         "GROQ_API_KEY is not set. "
         "Create backend/.env with GROQ_API_KEY=your_key and restart the server."
@@ -45,9 +43,9 @@ def analyze_query(query: str) -> dict:
 
     content = response.choices[0].message.content.strip()
 
-    # Very defensive: if LLM doesn't return clean JSON, fall back to simple keyword search
+    #  if LLM doesn't return clean JSON, fall back to simple keyword search
     try:
-        parsed = eval(content)  # For a real project you'd use json.loads with a JSON-only prompt
+        parsed = eval(content)  
         if not isinstance(parsed, dict):
             raise ValueError("Parsed content is not a dict")
         return {
