@@ -54,34 +54,37 @@ The backend uses an **LLM (via Groq)** to interpret the user's intent (titles, g
 movie-query-engine/
 │
 ├── backend/
-│   ├── app.py                  # FastAPI entrypoint
-│   ├── config.py               # Centralized env/config (optional)
+│   ├── app.py                        # FastAPI entrypoint + CORS + rate limiting
+│   ├── config.py                     # (optional) centralized env configuration
 │   ├── services/
-│   │   ├── llm_service.py      # Groq / LLM interaction
-│   │   ├── tmdb_service.py     # TMDB HTTP client + mapping
-│   │   └── parser_service.py   # Normalization helpers
+│   │   ├── llm_service.py            # Groq / LLM orchestration
+│   │   ├── tmdb_service.py           # TMDB client + caching + normalization
+│   │   └── parser_service.py         # Movie card format helper
 │   ├── models/
-│   │   └── schemas.py          # Pydantic schemas
+│   │   └── schemas.py                # Request/response Pydantic models
 │   ├── utils/
-│   │   └── error_handler.py    # Shared error formatting
+│   │   ├── error_handler.py          # Standardized backend error formatting
+│   │   └── rate_limit.py             # Lightweight in-memory rate limiter
 │   ├── requirements.txt
-│   └── .env                    # Backend env vars (not committed)
+│   └── .env                          # Backend env vars (NOT COMMITTED)
 │
 └── frontend/
     ├── src/
-    │   ├── App.jsx             # Root UI
-    │   ├── api.js              # Axios instance
+    │   ├── App.jsx                   # UI shell using search hook
+    │   ├── api.js                    # Axios instance + interceptors
+    │   ├── hooks/
+    │   │   └── useSearchMovies.js    # Search hook (debounced click logic)
     │   ├── components/
     │   │   ├── SearchBar.jsx
     │   │   ├── MovieCard.jsx
-    │   │
-    │   ├── main.jsx
-    │   └── index.css
+    │   ├── main.jsx                  # React entrypoint
+    │   └── index.css                 # Tailwind base styles
     ├── vite.config.js
     ├── postcss.config.js
-    ├── tailwind.config.* (if using)
+    ├── tailwind.config.js            # Tailwind config (generated)
     ├── package.json
-    └── .env                    # Frontend env vars (not committed)
+    └── .env                          # Frontend env vars (NOT COMMITTED)
+
 ```
 
 🔐 Environment Variables
