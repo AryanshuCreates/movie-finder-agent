@@ -101,39 +101,51 @@ TMDB_API_KEY: Get this from your TMDB account → Settings → API → API Key (
 GROQ_API_KEY: Get from Groq dashboard.
 🛠️ Setup & Installation
 
-1. Clone the repo
+## 1. Clone the repo
+```bash
    git clone https://github.com/your-username/movie-query-engine.git
    cd movie-query-engine
+```
 
-2. Backend Setup (FastAPI + Python)
-   Create and activate a virtual env (or use conda)
+## 2. Backend Setup (FastAPI + Python)
+  ```
+ Create and activate a virtual env (or use conda)
    cd backend
+```
 
-# Using venv
-
+## Using venv
+```
 python -m venv venv
 source venv/Scripts/activate # Windows
+```
 
-# or
+## or
 
+```
 source venv/bin/activate # Mac/Linux
+```
 
-# OR: using conda (if you prefer)
+## OR: using conda (if you prefer)
 
-# conda create -n movie-engine python=3.11
+```
+conda create -n movie-engine python=3.11
+conda activate movie-engine
 
-# conda activate movie-engine
 
 Install dependencies
 pip install -r requirements.txt
+```
 
-Create .env
+## Create .env
+```
 TMDB_API_KEY=your_tmdb_v3_api_key_here
 GROQ_API_KEY=your_groq_api_key_here
-ENV=development
+```
 
-Run the backend
+## Run the backend
+```
 uvicorn app:app --reload
+```
 
 Backend will be available at:
 
@@ -141,24 +153,30 @@ http://127.0.0.1:8000
 
 Docs: http://127.0.0.1:8000/docs
 
-3. Frontend Setup (React + Vite)
+## 3. Frontend Setup (React + Vite)
    Install dependencies
+   ```
    cd ../frontend
    npm install
+```
 
-Configure frontend .env
+## Configure frontend .env
+```
 VITE_API_URL=http://localhost:8000/api
+```
 
-Run the frontend
+## Run the frontend
+```
 npm run dev
+```
 
 Open the printed URL, usually:
 
 http://localhost:5173
 
-🌐 API Endpoints
-POST /api/search
-
+# 🌐 API Endpoints
+- POST /api/search
+```
 Description:
 Takes a natural language query, uses LLM to interpret intent, and returns relevant movie matches from TMDB.
 
@@ -189,14 +207,15 @@ Response:
 "genres": ["Action"]
 }
 }
+```
 
-GET /api/movies/:id
+## GET /api/movies/:id
 
 Example:
 
 GET /api/movies/603
 
-Response:
+```Response:
 
 {
 "id": 603,
@@ -208,22 +227,23 @@ Response:
 "cast": ["Keanu Reeves", "Carrie-Anne Moss", "..."],
 "director": "Lana Wachowski"
 }
+```
+# 🤖 LLM Prompt Design
 
-🤖 LLM Prompt Design
+- The backend uses an LLM (via Groq) to extract structured intent:
 
-The backend uses an LLM (via Groq) to extract structured intent:
+- Titles mentioned explicitly
 
-Titles mentioned explicitly
+- Genres inferred from description
 
-Genres inferred from description
+- Actors / directors if named
 
-Actors / directors if named
+- Free-form keywords (for TMDB query)
 
-Free-form keywords (for TMDB query)
+- Prompt pattern (simplified):
 
-Prompt pattern (simplified):
-
-You are a movie understanding engine.
+- You are a movie understanding engine.
+```
 User query: "{query}"
 
 Extract:
@@ -242,7 +262,8 @@ Return as JSON:
 "genres": []
 }
 
-Then the backend uses:
+```
+- Then the backend uses:
 
 titles[0] when a clear title is present
 
@@ -254,20 +275,20 @@ Use json mode or strict formatting tools instead of eval
 
 Add guardrails for hallucinations
 
-💡 Design Decisions & Trade-offs
+# 💡 Design Decisions & Trade-offs
 
-FastAPI chosen for:
+- FastAPI chosen for:
 
-Type safety via Pydantic
+- Type safety via Pydantic
 
-Great DX and clear routing
+- Great DX and clear routing
 
-Easy async/await support if scaling up
+- Easy async/await support if scaling up
 
-Requests (sync) over httpx for simplicity in a small take-home; can be swapped later.
+- Requests (sync) over httpx for simplicity in a small take-home; can be swapped later.
 
-Groq/Open LLM instead of closed models to align with assignment spec.
+- Groq/Open LLM instead of closed models to align with assignment spec.
 
-LLM-based intent extraction instead of building custom NLP pipeline (saves time, flexible).
+- LLM-based intent extraction instead of building custom NLP pipeline (saves time, flexible).
 
-TMDB v3 API key via query param for simplicity; can upgrade to v4 Bearer+headers later.
+- TMDB v3 API key via query param for simplicity; can upgrade to v4 Bearer+headers later.
