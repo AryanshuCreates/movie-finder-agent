@@ -1,4 +1,3 @@
-// frontend/src/App.jsx
 import { useState, useEffect } from "react";
 import SearchBar from "./components/SearchBar";
 import MovieCard from "./components/MovieCard";
@@ -8,37 +7,28 @@ import api from "./api";
 
 export default function App() {
   const [query, setQuery] = useState("");
-  const [selected, setSelected] = useState(null); // movie details (object)
+  const [selected, setSelected] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState(null);
 
-  const {
-    results,
-    analysis,
-    loading, // search loading
-    error, // search error
-    searchNow, // immediate search (if you want to use)
-    searchDebounced,
-  } = useSearchMovies();
+  const { results, analysis, loading, error, searchNow, searchDebounced } =
+    useSearchMovies();
 
-  // Make sure we cancel any pending debounced calls on unmount
   useEffect(() => {
     return () => {
-      // lodash.debounce exposes .cancel()
       searchDebounced.cancel?.();
     };
   }, [searchDebounced]);
 
   const handleSearch = () => {
     if (!query.trim()) return;
-    // Debounce only the explicit search click
     searchDebounced(query);
   };
 
   const openDetails = async (movie) => {
     setDetailError(null);
     setDetailLoading(true);
-    setSelected(null); // clear previous while loading
+    setSelected(null);
     try {
       const { data } = await api.get(`/movies/${movie.id}`);
       setSelected(data);
