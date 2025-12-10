@@ -3,8 +3,6 @@ import uvicorn
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-
-# Keep your existing imports
 from services.llm_service import analyze_query
 from services.tmdb_service import search_tmdb, get_movie_details
 from models.schemas import SearchRequest
